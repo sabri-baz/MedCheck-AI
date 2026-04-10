@@ -6,12 +6,44 @@ import {
   TextInput, 
   TouchableOpacity, 
   KeyboardAvoidingView, 
-  Platform 
+  Platform,
+  Alert
 } from 'react-native';
+import axios from 'axios';
 
 const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert('Hata', 'Lütfen e-posta ve şifrenizi girin.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const apiUrl = process.env.EXPO_PUBLIC_API_URL || 'http://10.192.171.47:5000/api';
+      const response = await axios.post(`${apiUrl}/auth/login`, {
+        email,
+        password
+      });
+
+      // Token can be stored in AsyncStorage here in a future step.
+      const { token, user } = response.data;
+      
+      Alert.alert('Başarılı', `Hoşgeldin ${user.fullName}!`);
+      // Here you would typically navigate to MainApp or Dashboard
+      // navigation.replace('MainApp'); // Assuming you have a MainApp route
+    } catch (error) {
+      console.error('Login Error:', error);
+      const errorMsg = error.response?.data?.error || 'Giriş işlemi başarısız oldu.';
+      Alert.alert('Hata', errorMsg);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <KeyboardAvoidingView 
@@ -40,8 +72,13 @@ const LoginScreen = ({ navigation }) => {
           />
         </View>
 
-        <TouchableOpacity style={styles.button} activeOpacity={0.7}>
-          <Text style={styles.buttonText}>Login</Text>
+        <TouchableOpacity 
+          style={[styles.button, loading && { opacity: 0.7 }]} 
+          activeOpacity={0.7}
+          onPress={handleLogin}
+          disabled={loading}
+        >
+          <Text style={styles.buttonText}>{loading ? 'Giriş Yapılıyor...' : 'Login'}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity 
