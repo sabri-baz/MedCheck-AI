@@ -68,9 +68,13 @@ initializeDB();
 // Routes
 const authRoutes = require('./routes/auth');
 const statsRoutes = require('./routes/stats');
+const medicinesRoutes = require('./routes/medicines');
+const aiRoutes = require('./routes/ai');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/stats', statsRoutes);
+app.use('/api/medicines', medicinesRoutes);
+app.use('/api/ai', aiRoutes);
 
 // Basic Route
 app.get('/', (req, res) => {

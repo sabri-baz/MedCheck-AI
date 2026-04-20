@@ -23,8 +23,8 @@ const sequelize = new Sequelize(
 const User = require('./User')(sequelize);
 const Medicine = require('./Medicine')(sequelize);
 
-// Define associations here eventually, e.g., User.hasMany(Medicine)
-
+User.hasMany(Medicine, { foreignKey: 'userId', as: 'medicines' });
+Medicine.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 module.exports = {
   sequelize,
   User,

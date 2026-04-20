@@ -15,13 +15,13 @@ module.exports = (sequelize) => {
       type: DataTypes.STRING,
       allowNull: false
     },
-    schedule: {
+    time: {
       type: DataTypes.STRING,
       allowNull: false
     },
-    usageNotes: {
-      type: DataTypes.TEXT,
-      allowNull: true
+    isActive: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: true
     }
   }, {
     timestamps: true
