@@ -6,13 +6,43 @@ import {
   TextInput, 
   TouchableOpacity, 
   KeyboardAvoidingView, 
-  Platform 
+  Platform,
+  Alert
 } from 'react-native';
+import axios from 'axios';
 
 const RegisterScreen = ({ navigation }) => {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleRegister = async () => {
+    if (!fullName || !email || !password) {
+      Alert.alert('Hata', 'Lütfen tüm alanları doldurun.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const apiUrl = process.env.EXPO_PUBLIC_API_URL || 'http://10.192.171.47:5000/api';
+      const response = await axios.post(`${apiUrl}/auth/register`, {
+        fullName,
+        email,
+        password
+      });
+
+      Alert.alert('Başarılı', 'Kayıt işlemi başarılı!', [
+        { text: 'Tamam', onPress: () => navigation.navigate('Login') } // assuming 'Login' is the route name
+      ]);
+    } catch (error) {
+      console.error('Registration Error:', error);
+      const errorMsg = error.response?.data?.error || 'Kayıt işlemi başarısız oldu.';
+      Alert.alert('Hata', errorMsg);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <KeyboardAvoidingView 
@@ -48,12 +78,17 @@ const RegisterScreen = ({ navigation }) => {
           />
         </View>
 
-        <TouchableOpacity style={styles.button} activeOpacity={0.7}>
-          <Text style={styles.buttonText}>Register</Text>
+        <TouchableOpacity 
+          style={[styles.button, loading && { opacity: 0.7 }]} 
+          activeOpacity={0.7}
+          onPress={handleRegister}
+          disabled={loading}
+        >
+          <Text style={styles.buttonText}>{loading ? 'Kayıt Olunuyor...' : 'Register'}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity 
-          onPress={() => navigation.pop()}
+          onPress={() => navigation.navigate('Login')} // use navigate explicitly instead of pop to be safe
           style={styles.linkButton}
         >
           <Text style={styles.linkText}>Already have an account? <Text style={styles.linkBold}>Login</Text></Text>

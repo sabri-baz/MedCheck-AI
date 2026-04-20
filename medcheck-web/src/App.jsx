@@ -1,28 +1,26 @@
-import { useState } from 'react'
-import './App.css'
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import Dashboard from './pages/Dashboard';
+import { ProtectedRoute } from './components/ProtectedRoute';
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <div className="App">
-      <div className="card">
-        <h1>MedCheck AI</h1>
-        <h2>Web Dashboard - Version 1.0</h2>
-        <p className="status-badge">Vite Ready</p>
-        
-        <div className="stats-container">
-          <button onClick={() => setCount((count) => count + 1)}>
-            Health Checks Count: {count}
-          </button>
-        </div>
-        
-        <p className="read-the-docs">
-          Week 3: Backend-Web-Mobile Integration Full Capacity
-        </p>
-      </div>
-    </div>
-  )
+    <Router>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route 
+          path="/" 
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          } 
+        />
+      </Routes>
+    </Router>
+  );
 }
 
-export default App
+export default App;

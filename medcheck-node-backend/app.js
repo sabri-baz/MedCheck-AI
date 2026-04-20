@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const morgan = require('morgan');
 const { Sequelize } = require('sequelize');
 
 const app = express();
@@ -9,8 +10,11 @@ const PORT = process.env.PORT || 5000;
 // Middleware
 app.use(cors({ origin: '*' }));
 app.use(express.json());
+app.use(morgan('dev')); // Logger
 
-// Database Connection Configuration
+// Import Models and Sequelize instance
+const { sequelize, User, Medicine } = require('./models');
+
 const dbConfig = {
   name: process.env.DB_NAME || 'medcheck_db',
   user: process.env.DB_USER || 'postgres',
@@ -20,24 +24,16 @@ const dbConfig = {
   dialect: 'postgres'
 };
 
-let sequelize = new Sequelize(
-  dbConfig.name,
-  dbConfig.user,
-  dbConfig.password,
-  {
-    host: dbConfig.host,
-    port: dbConfig.port,
-    dialect: dbConfig.dialect,
-    logging: false
-  }
-);
-
 // Check & Connect to DB
 async function initializeDB() {
   try {
     // try to authenticate first
     await sequelize.authenticate();
     console.log('✅ Connected to database: ' + dbConfig.name);
+    
+    // Sync models
+    await sequelize.sync({ alter: true });
+    console.log('✅ Synchronized database models (Users, Medicines).');
   } catch (error) {
     if (error.original && error.original.code === '3D000') { // Database does not exist code
       console.log(`⚠️ Database '${dbConfig.name}' doesn't exist. Attempting to create...`);
@@ -52,9 +48,12 @@ async function initializeDB() {
         await systemSequelize.query(`CREATE DATABASE "${dbConfig.name}";`);
         console.log(`✅ Database '${dbConfig.name}' created successfully.`);
         await systemSequelize.close();
-        // Re-attempt authentication
+        
+        // Re-attempt authentication and sync
         await sequelize.authenticate();
         console.log('✅ Connected to new database successfully.');
+        await sequelize.sync({ alter: true });
+        console.log('✅ Synchronized database models (Users, Medicines).');
       } catch (createError) {
         console.error('❌ Failed to create database:', createError.message);
       }
@@ -65,6 +64,17 @@ async function initializeDB() {
 }
 
 initializeDB();
+
+// Routes
+const authRoutes = require('./routes/auth');
+const statsRoutes = require('./routes/stats');
+const medicinesRoutes = require('./routes/medicines');
+const aiRoutes = require('./routes/ai');
+
+app.use('/api/auth', authRoutes);
+app.use('/api/stats', statsRoutes);
+app.use('/api/medicines', medicinesRoutes);
+app.use('/api/ai', aiRoutes);
 
 // Basic Route
 app.get('/', (req, res) => {
