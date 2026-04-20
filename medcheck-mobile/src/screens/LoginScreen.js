@@ -10,6 +10,7 @@ import {
   Alert
 } from 'react-native';
 import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
@@ -30,12 +31,12 @@ const LoginScreen = ({ navigation }) => {
         password
       });
 
-      // Token can be stored in AsyncStorage here in a future step.
+      // Token is stored in AsyncStorage
       const { token, user } = response.data;
+      await AsyncStorage.setItem('token', token);
       
-      Alert.alert('Başarılı', `Hoşgeldin ${user.fullName}!`);
-      // Here you would typically navigate to MainApp or Dashboard
-      // navigation.replace('MainApp'); // Assuming you have a MainApp route
+      // Alert removed or kept brief; navigate to MyMedicines
+      navigation.replace('MyMedicines');
     } catch (error) {
       console.error('Login Error:', error);
       const errorMsg = error.response?.data?.error || 'Giriş işlemi başarısız oldu.';
