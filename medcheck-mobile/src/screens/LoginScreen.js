@@ -25,8 +25,7 @@ const LoginScreen = ({ navigation }) => {
 
     setLoading(true);
     try {
-      const apiUrl = process.env.EXPO_PUBLIC_API_URL || 'http://10.192.171.47:5000/api';
-      const response = await axios.post(`${apiUrl}/auth/login`, {
+      const response = await axios.post(`${process.env.EXPO_PUBLIC_API_URL}/auth/login`, {
         email,
         password
       });

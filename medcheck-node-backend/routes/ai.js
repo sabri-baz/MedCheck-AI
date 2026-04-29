@@ -3,34 +3,51 @@ const authMiddleware = require('../middleware/authMiddleware');
 const axios = require('axios');
 const FormData = require('form-data');
 const sharp = require('sharp');
+const fdaService = require('../services/fdaService');
+const aiService = require('../services/aiService');
+const { Medicine } = require('../models');
 
 const router = express.Router();
 
 router.post('/analyze', authMiddleware, async (req, res) => {
   try {
-    // Expected to receive an array of medicine names or the new medicine info
-    const { medicines } = req.body; // array of strings (medicine names)
+    const { drugName, currentMedicines } = req.body;
     
-    if (!medicines || !Array.isArray(medicines)) {
-      return res.status(400).json({ error: 'Invalid payload. Expected an array of medicine names.' });
+    if (!drugName) {
+      return res.status(400).json({ error: 'Geçersiz veri. "drugName" alanı gereklidir.' });
     }
 
-    const medicineName = medicines[0].toLowerCase();
+    // İstemciden gelen mevcut ilaç listesi dizi değilse boş dizi kabul et
+    const activeMeds = Array.isArray(currentMedicines) ? currentMedicines : [];
 
-    if (medicineName.includes('aspirin')) {
-      res.json({ 
-        risk: 'high_risk', 
-        message: 'Kritik Etkileşim: Aspirin ve Warfarin birlikte kullanıldığında yüksek kanama riski oluşturur!' 
-      });
-    } else {
-      res.json({ 
-        risk: 'none', 
-        message: 'Risk bulunmadı.' 
-      });
+    // String formatında ("aspirin") veya obje formatında ({name: "aspirin"}) gelebilecek ilaçları
+    // AI servisinin beklentisine uygun hale getir
+    const formattedMeds = activeMeds.map(med => {
+      if (typeof med === 'string') return { name: med, dosage: 'Belirtilmemiş' };
+      return med;
+    });
+
+    // 1. Yeni eklenecek ilaç için FDA'den detaylı bilgi çek
+    let fdaData = null;
+    try {
+      fdaData = await fdaService.getDrugInfo(drugName);
+    } catch (e) {
+      console.warn('FDA verisi alınamadı, isim üzerinden analize devam ediliyor...');
     }
+
+    // 2. Gemini AI ile mevcut ilaçlar ve FDA verisini analiz et
+    const analysisResult = await aiService.analyzeRisk(fdaData, formattedMeds);
+
+    // 3. Sonucu mobil uygulamaya veya test aracına döndür
+    res.json({ 
+      risk: analysisResult.risk_level, 
+      message: analysisResult.short_explanation,
+      score: analysisResult.risk_score
+    });
+    
   } catch (error) {
     console.error('AI Analyze Error:', error.message);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Yapay zeka analizi sırasında bir hata oluştu.' });
   }
 });
 
@@ -118,6 +135,26 @@ router.post('/scan-image', authMiddleware, async (req, res) => {
   } catch (error) {
     console.error('Bulut OCR Hatası:', error.message || error);
     res.status(500).json({ success: false, error: 'Resim analiz edilemedi.' });
+  }
+});
+
+router.get('/fda/:drugName', async (req, res) => {
+  try {
+    const drugName = req.params.drugName;
+    if (!drugName) {
+      return res.status(400).json({ error: 'İlaç adı gerekli.' });
+    }
+
+    const drugInfo = await fdaService.getDrugInfo(drugName);
+    
+    if (!drugInfo) {
+      return res.status(404).json({ error: 'İlaç OpenFDA veritabanında bulunamadı.' });
+    }
+
+    res.json(drugInfo);
+  } catch (error) {
+    console.error('FDA Route Error:', error.message);
+    res.status(500).json({ error: 'FDA servisinden veri alınırken hata oluştu.' });
   }
 });
 

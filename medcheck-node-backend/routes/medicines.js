@@ -40,4 +40,27 @@ router.post('/', authMiddleware, async (req, res) => {
   }
 });
 
+router.delete('/:id', authMiddleware, async (req, res) => {
+  try {
+    const medicineId = req.params.id;
+    const userId = req.user.id;
+
+    const deletedCount = await Medicine.destroy({
+      where: {
+        id: medicineId,
+        userId: userId
+      }
+    });
+
+    if (deletedCount === 0) {
+      return res.status(404).json({ error: 'İlaç bulunamadı veya silmeye yetkiniz yok.' });
+    }
+
+    res.status(200).json({ message: 'İlaç başarıyla silindi' });
+  } catch (error) {
+    console.error('Delete Medicine Error:', error.message);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 module.exports = router;
