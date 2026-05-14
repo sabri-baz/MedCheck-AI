@@ -1,9 +1,12 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import apiClient from '../api/config'; // Bunu kullanarak baseURL alabiliriz veya direkt axios instance'ı kullanabiliriz.
+
+// baseURL'i config'ten okuyalım
+const baseURL = apiClient.defaults.baseURL;
 
 const api = axios.create({
-  // BaseURL depends on the .env file EXPO_PUBLIC_API_URL
-  baseURL: process.env.EXPO_PUBLIC_API_URL,
+  baseURL: baseURL,
   headers: {
     'Content-Type': 'application/json',
   },
