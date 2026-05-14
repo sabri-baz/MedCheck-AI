@@ -34,7 +34,7 @@ async function initializeDB() {
     
     // Sync models
     await sequelize.sync({ alter: true });
-    console.log('✅ Synchronized database models (Users, Medicines).');
+    console.log('✅ Synchronized database models (Users, Medicines, Reports).');
   } catch (error) {
     if (error.original && error.original.code === '3D000') { // Database does not exist code
       console.log(`⚠️ Database '${dbConfig.name}' doesn't exist. Attempting to create...`);
@@ -54,7 +54,7 @@ async function initializeDB() {
         await sequelize.authenticate();
         console.log('✅ Connected to new database successfully.');
         await sequelize.sync({ alter: true });
-        console.log('✅ Synchronized database models (Users, Medicines).');
+        console.log('✅ Synchronized database models (Users, Medicines, Reports).');
       } catch (createError) {
         console.error('❌ Failed to create database:', createError.message);
       }
@@ -71,17 +71,25 @@ const authRoutes = require('./routes/auth');
 const statsRoutes = require('./routes/stats');
 const medicinesRoutes = require('./routes/medicines');
 const aiRoutes = require('./routes/ai');
+const reportRoutes = require('./routes/reports');
+const profileRoutes = require('./routes/profile');
+const healthHistoryRoutes = require('./routes/healthHistory');
+const usersRoutes = require('./routes/users');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/medicines', medicinesRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/reports', reportRoutes);
+app.use('/api/profile', profileRoutes);
+app.use('/api/health-history', healthHistoryRoutes);
+app.use('/api/users', usersRoutes);
 
 // Basic Route
 app.get('/', (req, res) => {
   res.send('MedCheck AI Backend is running...');
 });
 
-app.listen(PORT, () => {
-  console.log(`🚀 Server is running on http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Server is running on http://0.0.0.0:${PORT}`);
 });

@@ -22,6 +22,16 @@ module.exports = (sequelize) => {
     password: {
       type: DataTypes.STRING,
       allowNull: false
+    },
+    preferences: {
+      type: DataTypes.JSON,
+      allowNull: true,
+      defaultValue: {
+        twoFactorAuth: false,
+        biometricLogin: false,
+        darkMode: false,
+        language: 'tr'
+      }
     }
   }, {
     timestamps: true
