@@ -22,11 +22,29 @@ const sequelize = new Sequelize(
 
 const User = require('./User')(sequelize);
 const Medicine = require('./Medicine')(sequelize);
+const Report = require('./Report')(sequelize);
+const Profile = require('./Profile')(sequelize);
+const MedicineLog = require('./MedicineLog')(sequelize);
+
+User.hasOne(Profile, { foreignKey: 'userId', as: 'profile' });
+Profile.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 
 User.hasMany(Medicine, { foreignKey: 'userId', as: 'medicines' });
 Medicine.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+
+User.hasMany(Report, { foreignKey: 'userId', as: 'reports' });
+Report.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+
+User.hasMany(MedicineLog, { foreignKey: 'userId', as: 'medicineLogs' });
+MedicineLog.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+
+Medicine.hasMany(MedicineLog, { foreignKey: 'medicineId', as: 'logs' });
+MedicineLog.belongsTo(Medicine, { foreignKey: 'medicineId', as: 'medicine' });
 module.exports = {
   sequelize,
   User,
-  Medicine
+  Medicine,
+  Report,
+  Profile,
+  MedicineLog
 };

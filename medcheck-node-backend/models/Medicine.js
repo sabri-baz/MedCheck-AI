@@ -19,9 +19,31 @@ module.exports = (sequelize) => {
       type: DataTypes.STRING,
       allowNull: false
     },
+    totalPills: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      defaultValue: 0
+    },
+    dailyDose: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      defaultValue: 1
+    },
+    frequency: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    usage_instructions: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
     isActive: {
       type: DataTypes.BOOLEAN,
       defaultValue: true
+    },
+    lastTaken: {
+      type: DataTypes.DATE,
+      allowNull: true
     }
   }, {
     timestamps: true

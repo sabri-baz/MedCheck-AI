@@ -1,5 +1,5 @@
 const express = require('express');
-const { Medicine } = require('../models');
+const { Medicine, MedicineLog } = require('../models');
 const authMiddleware = require('../middleware/authMiddleware');
 
 const router = express.Router();
@@ -19,7 +19,7 @@ router.get('/', authMiddleware, async (req, res) => {
 
 router.post('/', authMiddleware, async (req, res) => {
   try {
-    const { name, dosage, time, isActive } = req.body;
+    const { name, dosage, frequency, time, usage_instructions, isActive } = req.body;
     
     if (!name || !dosage || !time) {
       return res.status(400).json({ error: 'Name, dosage, and time are required fields.' });
@@ -28,7 +28,9 @@ router.post('/', authMiddleware, async (req, res) => {
     const newMedicine = await Medicine.create({
       name,
       dosage,
+      frequency,
       time,
+      usage_instructions,
       isActive: isActive !== undefined ? isActive : true,
       userId: req.user.id
     });
@@ -59,6 +61,39 @@ router.delete('/:id', authMiddleware, async (req, res) => {
     res.status(200).json({ message: 'İlaç başarıyla silindi' });
   } catch (error) {
     console.error('Delete Medicine Error:', error.message);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+router.post('/:id/take', authMiddleware, async (req, res) => {
+  try {
+    const medicineId = req.params.id;
+    const userId = req.user.id;
+
+    const medicine = await Medicine.findOne({
+      where: {
+        id: medicineId,
+        userId: userId
+      }
+    });
+
+    if (!medicine) {
+      return res.status(404).json({ error: 'İlaç bulunamadı.' });
+    }
+
+    medicine.lastTaken = new Date();
+    await medicine.save();
+
+    await MedicineLog.create({
+      medicineId: medicine.id,
+      userId: userId,
+      status: 'taken',
+      takenTime: new Date()
+    });
+
+    res.status(200).json({ message: 'İlaç alındı olarak işaretlendi.', medicine });
+  } catch (error) {
+    console.error('Take Medicine Error:', error.message);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
