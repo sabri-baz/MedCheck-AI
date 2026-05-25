@@ -4,10 +4,11 @@ import {
   Text, 
   StyleSheet, 
   TouchableOpacity, 
-  SafeAreaView, 
   ActivityIndicator,
-  Alert 
+  Alert,
+  ScrollView
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../services/api';
 import { ThemeContext } from '../context/ThemeContext';
@@ -71,7 +72,7 @@ const AnalysisResultScreen = ({ route, navigation }) => {
         <View style={{ width: 24 }} />
       </View>
 
-      <View style={styles.content}>
+      <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={[styles.iconCircle, { backgroundColor: isDanger ? '#fca5a5' : '#a7f3d0' }]}>
           <Ionicons name={iconName} size={64} color={themeColor} />
         </View>
@@ -86,7 +87,7 @@ const AnalysisResultScreen = ({ route, navigation }) => {
             <Text style={styles.recommendationText}>{analysisResult.recommendation}</Text>
           </View>
         </View>
-      </View>
+      </ScrollView>
 
       <View style={styles.footer}>
         {isDanger ? (
@@ -138,9 +139,12 @@ function getStyles(theme) {
   },
   content: {
     flex: 1,
+  },
+  scrollContent: {
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingTop: 40,
+    paddingBottom: 30,
   },
   iconCircle: {
     width: 120,

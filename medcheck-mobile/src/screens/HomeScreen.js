@@ -5,9 +5,9 @@ import {
   StyleSheet, 
   TouchableOpacity, 
   ScrollView, 
-  Image,
-  SafeAreaView
+  Image
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import api from '../services/api';
 import ReminderModal from '../components/ReminderModal';
@@ -136,9 +136,14 @@ const HomeScreen = ({ navigation }) => {
             <MaterialCommunityIcons name="medical-bag" size={28} color={theme.colors.primary} />
             <Text style={styles.headerTitle}>MedCheck AI</Text>
           </View>
-          <TouchableOpacity>
-            <Ionicons name="notifications" size={24} color={theme.colors.text} />
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <TouchableOpacity onPress={() => navigation.navigate('Settings')} style={{ marginRight: 16 }}>
+              <Ionicons name="settings-outline" size={26} color={theme.colors.text} />
+            </TouchableOpacity>
+            <TouchableOpacity>
+              <Ionicons name="notifications" size={24} color={theme.colors.text} />
+            </TouchableOpacity>
+          </View>
         </View>
 
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
@@ -214,13 +219,12 @@ const HomeScreen = ({ navigation }) => {
           onRefresh={fetchDashboardData}
         />
 
-        {/* Floating Action Button */}
         <TouchableOpacity 
-          style={styles.fab} 
-          onPress={() => navigation.navigate('AddMedicine')}
+          style={styles.fabChat} 
+          onPress={() => navigation.navigate('Chatbot')}
           activeOpacity={0.8}
         >
-          <Ionicons name="add" size={32} color="#FFF" />
+          <Ionicons name="chatbubbles" size={28} color="#FFF" />
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -416,17 +420,17 @@ function getStyles(theme) {
     fontSize: 13,
     color: theme.colors.textSecondary,
   },
-  fab: {
+  fabChat: {
     position: 'absolute',
-    bottom: 24,
+    bottom: 24, 
     right: 24,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: theme.colors.primary,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: theme.isDarkMode ? '#3b82f6' : '#2563EB', 
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: theme.colors.primary,
+    shadowColor: '#2563EB',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4,
     shadowRadius: 8,

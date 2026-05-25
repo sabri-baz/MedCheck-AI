@@ -3,12 +3,12 @@ import {
   View, 
   Text, 
   StyleSheet, 
-  SafeAreaView, 
   FlatList,
   TouchableOpacity,
   ActivityIndicator,
   Share
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import api from '../services/api';
 import { ThemeContext } from '../context/ThemeContext';

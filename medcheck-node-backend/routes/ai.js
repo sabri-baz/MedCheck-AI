@@ -193,4 +193,41 @@ SADECE şu JSON formatında yanıt ver (Asla markdown veya başka metin ekleme):
   }
 });
 
+router.post('/chat', authMiddleware, async (req, res) => {
+  try {
+    const { message } = req.body;
+    if (!message) {
+      return res.status(400).json({ error: 'Mesaj gereklidir.' });
+    }
+
+    // 1. Fetch Profile
+    const profile = await Profile.findOne({ where: { userId: req.user.id } });
+    const allergies = profile?.allergies?.length ? profile.allergies.join(', ') : 'Yok';
+    const chronicDiseases = profile?.chronicDiseases?.length ? profile.chronicDiseases.join(', ') : 'Yok';
+
+    // 2. Fetch Medicines
+    const currentMeds = await Medicine.findAll({ where: { userId: req.user.id } });
+    const currentMedsList = currentMeds.length ? currentMeds.map(m => `${m.name} (${m.dosage})`).join(', ') : 'Yok';
+
+    // 3. Build System Prompt
+    const systemPrompt = `Sen uzman bir sağlık asistanısın. Hastanın şu an kullandığı ilaçlar: [${currentMedsList}], Kronik hastalıkları: [${chronicDiseases}], Alerjileri: [${allergies}]. Hastanın sorusuna bu bilgileri göz önünde bulundurarak, şefkatli, net ve kısa bir cevap ver. Her zaman tıbbi bir acil durumda doktora görünmesi gerektiğini hatırlat.
+
+Hastanın Sorusu: ${message}`;
+
+    // 4. Call Gemini
+    const { GoogleGenerativeAI } = require('@google/generative-ai');
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+    
+    const result = await model.generateContent(systemPrompt);
+    const reply = result.response.text();
+    
+    res.json({ reply });
+
+  } catch (error) {
+    console.error('Chat AI Error:', error);
+    res.status(500).json({ error: 'Asistana bağlanırken hata oluştu.' });
+  }
+});
+
 module.exports = router;

@@ -20,7 +20,7 @@ import { ThemeContext } from '../context/ThemeContext';
 
 const BLOOD_TYPES = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', '0+', '0-'];
 
-const ProfileScreen = () => {
+const ProfileScreen = ({ navigation }) => {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -36,8 +36,14 @@ const ProfileScreen = () => {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      fetchProfile();
+    });
+    
     fetchProfile();
-  }, []);
+    
+    return unsubscribe;
+  }, [navigation]);
 
   const fetchProfile = async () => {
     try {
@@ -104,8 +110,11 @@ const ProfileScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
         <Text style={styles.headerTitle}>Profil</Text>
+        <TouchableOpacity onPress={() => navigation.navigate('Settings')}>
+          <Ionicons name="settings-outline" size={24} color={theme.colors.text} />
+        </TouchableOpacity>
       </View>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         
@@ -116,7 +125,7 @@ const ProfileScreen = () => {
             style={styles.avatar} 
           />
           <Text style={styles.userName}>{fullName}</Text>
-          <Text style={styles.userSubInfo}>Bilinmeyen Yaş, İstanbul</Text>
+          <Text style={styles.userSubInfo}>{profile?.age ? `${profile.age} Yaş` : 'Bilinmeyen Yaş'}, İstanbul</Text>
         </View>
 
         {/* Info Cards Row */}

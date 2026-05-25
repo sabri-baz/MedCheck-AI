@@ -3,7 +3,6 @@ import {
   View, 
   Text, 
   StyleSheet, 
-  SafeAreaView, 
   TouchableOpacity, 
   Switch, 
   ScrollView, 
@@ -13,6 +12,7 @@ import {
   ActivityIndicator,
   Platform
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as LocalAuthentication from 'expo-local-authentication';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -36,6 +36,13 @@ const SettingsScreen = ({ navigation }) => {
   const [newPassword, setNewPassword] = useState('');
   const [changingPassword, setChangingPassword] = useState(false);
 
+  // Edit Profile States
+  const [editProfileModalVisible, setEditProfileModalVisible] = useState(false);
+  const [editFullName, setEditFullName] = useState('');
+  const [editAge, setEditAge] = useState('');
+  const [userAge, setUserAge] = useState('');
+  const [savingProfile, setSavingProfile] = useState(false);
+
   useEffect(() => {
     fetchUserData();
   }, []);
@@ -52,6 +59,11 @@ const SettingsScreen = ({ navigation }) => {
         if (response.data.preferences.darkMode !== undefined) {
           toggleTheme(response.data.preferences.darkMode);
         }
+      }
+
+      const profileResponse = await api.get('/profile');
+      if (profileResponse.data && profileResponse.data.age) {
+        setUserAge(profileResponse.data.age.toString());
       }
     } catch (error) {
       console.error('Kullanıcı bilgileri alınamadı:', error);
@@ -147,6 +159,30 @@ const SettingsScreen = ({ navigation }) => {
     );
   };
 
+  const handleSaveProfile = async () => {
+    if (!editFullName) {
+      Alert.alert('Hata', 'İsim boş bırakılamaz.');
+      return;
+    }
+    setSavingProfile(true);
+    try {
+      if (editFullName !== user.fullName) {
+        await api.put('/users/me', { fullName: editFullName });
+        setUser(prev => ({ ...prev, fullName: editFullName }));
+      }
+      if (editAge !== userAge) {
+        await api.post('/profile', { age: editAge ? parseInt(editAge, 10) : null });
+        setUserAge(editAge);
+      }
+      setEditProfileModalVisible(false);
+      Alert.alert('Başarılı', 'Genel bilgileriniz güncellendi.');
+    } catch (error) {
+      Alert.alert('Hata', 'Bilgiler güncellenirken bir sorun oluştu.');
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
   const renderSectionHeader = (title) => (
     <Text style={styles.sectionHeader}>{title}</Text>
   );
@@ -209,7 +245,11 @@ const SettingsScreen = ({ navigation }) => {
             <Text style={styles.profileName}>{user.fullName || 'Kullanıcı'}</Text>
             <Text style={styles.profileEmail}>{user.email || 'email@example.com'}</Text>
           </View>
-          <TouchableOpacity style={styles.editProfileBtn} onPress={() => navigation.navigate('Profil')}>
+          <TouchableOpacity style={styles.editProfileBtn} onPress={() => {
+            setEditFullName(user.fullName);
+            setEditAge(userAge);
+            setEditProfileModalVisible(true);
+          }}>
             <Text style={styles.editProfileText}>Düzenle</Text>
           </TouchableOpacity>
         </View>
@@ -253,6 +293,50 @@ const SettingsScreen = ({ navigation }) => {
         <View style={{ height: 40 }} />
       </ScrollView>
 
+      {/* Edit Profile Modal */}
+      <Modal visible={editProfileModalVisible} animationType="slide" transparent={true}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Genel Bilgiler</Text>
+              <TouchableOpacity onPress={() => setEditProfileModalVisible(false)}>
+                <Ionicons name="close" size={24} color={theme.colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
+            
+            <View style={styles.modalBody}>
+              <Text style={styles.inputLabel}>Ad Soyad</Text>
+              <TextInput 
+                style={styles.inputField} 
+                placeholder="Adınız ve Soyadınız"
+                placeholderTextColor={theme.colors.textSecondary}
+                value={editFullName}
+                onChangeText={setEditFullName}
+              />
+              
+              <Text style={styles.inputLabel}>Yaş</Text>
+              <TextInput 
+                style={styles.inputField} 
+                keyboardType="numeric"
+                placeholder="Yaşınız"
+                placeholderTextColor={theme.colors.textSecondary}
+                value={editAge}
+                onChangeText={setEditAge}
+              />
+
+              <TouchableOpacity 
+                style={styles.modalSaveButton} 
+                onPress={handleSaveProfile}
+                disabled={savingProfile}
+              >
+                {savingProfile ? <ActivityIndicator color="#fff" /> : <Text style={styles.modalSaveButtonText}>Kaydet</Text>}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Password Modal */}
       <Modal visible={passwordModalVisible} animationType="slide" transparent={true}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>

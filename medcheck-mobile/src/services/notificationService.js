@@ -12,11 +12,9 @@ Notifications.setNotificationHandler({
 });
 
 /**
- * Request notification permissions from the user
+ * Request notification permissions from the user for Local Notifications
  */
-export async function registerForPushNotificationsAsync() {
-  let token;
-
+export async function requestLocalNotificationPermissionsAsync() {
   if (Platform.OS === 'android') {
     await Notifications.setNotificationChannelAsync('default', {
       name: 'default',
@@ -28,25 +26,19 @@ export async function registerForPushNotificationsAsync() {
     });
   }
 
-  if (Device.isDevice) {
-    const { status: existingStatus } = await Notifications.getPermissionsAsync();
-    let finalStatus = existingStatus;
-    if (existingStatus !== 'granted') {
-      const { status } = await Notifications.requestPermissionsAsync();
-      finalStatus = status;
-    }
-    if (finalStatus !== 'granted') {
-      console.log('Failed to get push token for push notification!');
-      return;
-    }
-    // Learn more about Expo Push Token: https://docs.expo.dev/push-notifications/push-notifications-setup/
-    // token = (await Notifications.getExpoPushTokenAsync()).data;
-    // console.log(token);
-  } else {
-    console.log('Must use physical device for Push Notifications');
+  const { status: existingStatus } = await Notifications.getPermissionsAsync();
+  let finalStatus = existingStatus;
+  if (existingStatus !== 'granted') {
+    const { status } = await Notifications.requestPermissionsAsync();
+    finalStatus = status;
+  }
+  
+  if (finalStatus !== 'granted') {
+    console.log('Failed to get permissions for local notifications!');
+    return false;
   }
 
-  return token;
+  return true;
 }
 
 /**
@@ -71,17 +63,39 @@ export async function scheduleMedicineAlarm(medicineName, dosage, time) {
         title: '💊 İlaç Vakti!',
         body: `${medicineName} (${dosage}) vaktiniz geldi. Lütfen ilacınızı almayı unutmayın.`,
         sound: true,
-        priority: Notifications.AndroidImportance.MAX,
+        priority: Notifications.AndroidNotificationPriority?.MAX || 'max',
         vibrate: [0, 250, 250, 250],
         data: { medicineName, dosage, time: t },
       },
       trigger: {
+        type: 'daily',
+        channelId: 'default',
         hour: hours,
         minute: minutes,
-        repeats: true,
       },
     });
 
     console.log(`Notification scheduled for ${medicineName} at ${t}. ID: ${id}`);
   }
+}
+
+/**
+ * Update a scheduled medicine alarm
+ * Cancels old alarms for this medicine and schedules new ones.
+ */
+export async function updateMedicineNotification(medicineName, dosage, oldTime, newTime) {
+  if (!newTime) return;
+
+  // Find and cancel old notifications for this medicine
+  const scheduledNotifications = await Notifications.getAllScheduledNotificationsAsync();
+  for (const notification of scheduledNotifications) {
+    const data = notification.content.data;
+    if (data && data.medicineName === medicineName) {
+      await Notifications.cancelScheduledNotificationAsync(notification.identifier);
+      console.log(`Cancelled old notification for ${medicineName}`);
+    }
+  }
+
+  // Schedule the new ones
+  await scheduleMedicineAlarm(medicineName, dosage, newTime);
 }

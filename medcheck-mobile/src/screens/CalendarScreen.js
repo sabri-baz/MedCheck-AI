@@ -9,12 +9,16 @@ import {
   ActivityIndicator,
   Modal,
   TouchableWithoutFeedback,
-  SafeAreaView,
-  Dimensions
+  Dimensions,
+  Platform,
+  Alert
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import api from '../services/api';
 import { ThemeContext } from '../context/ThemeContext';
+import { updateMedicineNotification } from '../services/notificationService';
 
 const { width } = Dimensions.get('window');
 
@@ -29,6 +33,11 @@ const CalendarScreen = ({ navigation }) => {
   // Modal State
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedMedicine, setSelectedMedicine] = useState(null);
+
+  // Time Picker State
+  const [showTimePicker, setShowTimePicker] = useState(false);
+  const [editingMedicine, setEditingMedicine] = useState(null);
+  const [tempTime, setTempTime] = useState(new Date());
 
   const { theme } = useContext(ThemeContext);
 
@@ -97,6 +106,51 @@ const CalendarScreen = ({ navigation }) => {
     setModalVisible(true);
   };
 
+  const handleEditTime = (item) => {
+    setEditingMedicine(item);
+    const [hours, minutes] = item.time.split(':').map(Number);
+    const d = new Date();
+    d.setHours(hours || 9, minutes || 0, 0, 0);
+    setTempTime(d);
+    setShowTimePicker(true);
+  };
+
+  const handleTimeChange = async (event, selectedDate) => {
+    if (Platform.OS === 'android') {
+      setShowTimePicker(false);
+    }
+    
+    if (event.type === 'dismissed' || !selectedDate) {
+      setShowTimePicker(false);
+      setEditingMedicine(null);
+      return;
+    }
+
+    if (Platform.OS === 'ios') {
+      setShowTimePicker(false);
+    }
+
+    const hours = selectedDate.getHours().toString().padStart(2, '0');
+    const minutes = selectedDate.getMinutes().toString().padStart(2, '0');
+    const newTimeString = `${hours}:${minutes}`;
+
+    try {
+      await api.patch(`/medicines/${editingMedicine.id}/time`, { time: newTimeString });
+      
+      setMedicines(prev => 
+        prev.map(m => m.id === editingMedicine.id ? { ...m, time: newTimeString } : m)
+            .sort((a, b) => a.time.localeCompare(b.time))
+      );
+
+      await updateMedicineNotification(editingMedicine.name, editingMedicine.dosage, editingMedicine.time, newTimeString);
+    } catch (error) {
+      console.error('Time update error:', error);
+      Alert.alert('Hata', 'Saat güncellenirken bir sorun oluştu.');
+    }
+    
+    setEditingMedicine(null);
+  };
+
   const renderDateItem = ({ item }) => {
     const isSelected = item.toDateString() === selectedDate.toDateString();
     const dayName = item.toLocaleDateString('tr-TR', { weekday: 'short' });
@@ -149,6 +203,17 @@ const CalendarScreen = ({ navigation }) => {
               <View style={styles.cardInfo}>
                 <Text style={[styles.medicineName, isTaken && styles.textMuted]}>{item.name}</Text>
                 <Text style={[styles.medicineDosage, isTaken && styles.textMuted]}>{item.dosage || 'Doz belirtilmedi'}</Text>
+                
+                {!isTaken && (
+                  <TouchableOpacity 
+                    onPress={() => handleEditTime(item)} 
+                    style={styles.editTimeBtn}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="time" size={14} color="#3b82f6" />
+                    <Text style={styles.editTimeText}>Saati Düzenle</Text>
+                  </TouchableOpacity>
+                )}
               </View>
               <TouchableOpacity 
                 style={[styles.checkBtn, isTaken && styles.checkBtnTaken]}
@@ -187,7 +252,7 @@ const CalendarScreen = ({ navigation }) => {
         <Text style={styles.emptySubtitle}>Bugün için planlanmış bir ilacınız yok. Keyfini çıkarın!</Text>
         <TouchableOpacity 
           style={styles.addBtn}
-          onPress={() => navigation.navigate('İlaç Ekle')}
+          onPress={() => navigation.navigate('AddMedicine')}
         >
           <Text style={styles.addBtnText}>Yeni İlaç Ekle</Text>
         </TouchableOpacity>
@@ -308,9 +373,19 @@ const CalendarScreen = ({ navigation }) => {
           </View>
         </TouchableWithoutFeedback>
       </Modal>
-    </SafeAreaView>
-  );
-};
+
+          {showTimePicker && (
+            <DateTimePicker
+              value={tempTime}
+              mode="time"
+              is24Hour={true}
+              display="default"
+              onChange={handleTimeChange}
+            />
+          )}
+        </SafeAreaView>
+      );
+    };
 
 function getStyles(theme) {
   return StyleSheet.create({
@@ -496,6 +571,22 @@ function getStyles(theme) {
       color: theme.colors.textSecondary,
       fontWeight: '600',
       marginTop: 2,
+    },
+    editTimeBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: '#eff6ff',
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      borderRadius: 10,
+      marginTop: 10,
+      alignSelf: 'flex-start',
+    },
+    editTimeText: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: '#3b82f6',
+      marginLeft: 4,
     },
     checkBtn: {
       padding: 4,

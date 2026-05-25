@@ -15,7 +15,44 @@ import ProfileScreen from '../screens/ProfileScreen';
 import AnalysisResultScreen from '../screens/AnalysisResultScreen';
 import HealthHistoryScreen from '../screens/HealthHistoryScreen';
 import SettingsScreen from '../screens/SettingsScreen';
-import { View, Text } from 'react-native';
+import ChatbotScreen from '../screens/ChatbotScreen';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+
+const CustomTabBarButton = () => {
+  const navigation = useNavigation();
+  const { theme } = useContext(ThemeContext);
+
+  return (
+    <TouchableOpacity
+      style={{
+        top: -25,
+        justifyContent: 'center',
+        alignItems: 'center',
+      }}
+      onPress={() => navigation.navigate('AddMedicine')}
+      activeOpacity={0.8}
+    >
+      <View
+        style={{
+          width: 60,
+          height: 60,
+          borderRadius: 30,
+          backgroundColor: theme.colors.primary,
+          justifyContent: 'center',
+          alignItems: 'center',
+          shadowColor: theme.colors.primary,
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.4,
+          shadowRadius: 8,
+          elevation: 5,
+        }}
+      >
+        <Ionicons name="add" size={32} color="#FFF" />
+      </View>
+    </TouchableOpacity>
+  );
+};
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -58,9 +95,16 @@ const MainTabs = () => {
     >
       <Tab.Screen name="Ana Sayfa" component={HomeScreen} />
       <Tab.Screen name="Takvim" component={CalendarScreen} />
+      <Tab.Screen 
+        name="AddMedicineTab" 
+        component={View} 
+        options={{
+          tabBarLabel: () => null,
+          tabBarButton: (props) => <CustomTabBarButton {...props} />
+        }}
+      />
       <Tab.Screen name="Geçmiş" component={HealthHistoryScreen} />
       <Tab.Screen name="Profil" component={ProfileScreen} />
-      <Tab.Screen name="Ayarlar" component={SettingsScreen} />
     </Tab.Navigator>
   );
 };
@@ -99,6 +143,16 @@ const AppNavigator = () => {
         name="AnalysisResult" 
         component={AnalysisResultScreen} 
         options={{ headerShown: false }}
+      />
+      <Stack.Screen 
+        name="Chatbot" 
+        component={ChatbotScreen} 
+        options={{ headerShown: false }} 
+      />
+      <Stack.Screen 
+        name="Settings" 
+        component={SettingsScreen} 
+        options={{ headerShown: false }} 
       />
     </Stack.Navigator>
   );

@@ -34,6 +34,10 @@ module.exports = (sequelize) => {
     bloodType: {
       type: DataTypes.STRING,
       allowNull: true
+    },
+    age: {
+      type: DataTypes.INTEGER,
+      allowNull: true
     }
   }, {
     timestamps: true

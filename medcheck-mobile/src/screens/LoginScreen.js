@@ -304,8 +304,9 @@ const styles = StyleSheet.create({
   },
   footer: {
     flexDirection: 'row',
-    marginTop: 'auto',
-    paddingTop: 20,
+    marginTop: 30,
+    paddingTop: 10,
+    paddingBottom: 20,
   },
   footerText: {
     color: '#64748B',

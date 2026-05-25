@@ -1,10 +1,17 @@
 import axios from 'axios';
+import Constants from 'expo-constants';
 
-// LOCAL_IP değerini kendi bilgisayarınızın IP adresiyle değiştirin.
-// Örn: '192.168.1.100' veya Android Emülatör için '10.0.2.2'
-const LOCAL_IP = '10.0.2.2'; 
+let LOCAL_IP = '10.0.2.2'; // Fallback Android Emulator IP
+let baseURL = process.env.EXPO_PUBLIC_API_URL;
 
-const baseURL = process.env.EXPO_PUBLIC_API_URL || `http://${LOCAL_IP}:5000/api`;
+// Eğer geliştirme ortamındaysak (Dev) ve Expo'dan IP okuyabiliyorsak:
+// Kesin olarak doğru olan bu IP'yi kullan (eski/hatalı .env ayarını ez)
+if (__DEV__ && Constants.expoConfig?.hostUri) {
+  LOCAL_IP = Constants.expoConfig.hostUri.split(':')[0];
+  baseURL = `http://${LOCAL_IP}:5000/api`;
+} else if (!baseURL) {
+  baseURL = `http://${LOCAL_IP}:5000/api`;
+}
 
 const apiClient = axios.create({
   baseURL,

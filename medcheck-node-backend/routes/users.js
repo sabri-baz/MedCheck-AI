@@ -23,6 +23,27 @@ router.get('/me', authMiddleware, async (req, res) => {
   }
 });
 
+// Update Current User Info (fullName, etc)
+router.put('/me', authMiddleware, async (req, res) => {
+  try {
+    const { fullName } = req.body;
+    
+    const user = await User.findByPk(req.user.id);
+    if (!user) {
+      return res.status(404).json({ error: 'Kullanıcı bulunamadı.' });
+    }
+
+    if (fullName) user.fullName = fullName;
+    
+    await user.save();
+    
+    res.json({ message: 'Kullanıcı bilgileri güncellendi.', user: { id: user.id, fullName: user.fullName, email: user.email } });
+  } catch (error) {
+    console.error('Update User Error:', error);
+    res.status(500).json({ error: 'Kullanıcı bilgileri güncellenirken hata oluştu.' });
+  }
+});
+
 // Change Password
 router.put('/change-password', authMiddleware, async (req, res) => {
   try {

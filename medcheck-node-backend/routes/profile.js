@@ -48,13 +48,22 @@ router.get('/', authMiddleware, async (req, res) => {
 router.post('/', authMiddleware, async (req, res) => {
   try {
     const userId = req.user.id;
-    const { allergies, chronicDiseases, height, weight, bloodType } = req.body;
+    const { allergies, chronicDiseases, height, weight, bloodType, age } = req.body;
     
     let profile = await Profile.findOne({ where: { userId } });
+    
+    const updateData = {};
+    if (allergies !== undefined) updateData.allergies = allergies;
+    if (chronicDiseases !== undefined) updateData.chronicDiseases = chronicDiseases;
+    if (height !== undefined) updateData.height = height;
+    if (weight !== undefined) updateData.weight = weight;
+    if (bloodType !== undefined) updateData.bloodType = bloodType;
+    if (age !== undefined) updateData.age = age;
+
     if (!profile) {
-      profile = await Profile.create({ userId, allergies, chronicDiseases, height, weight, bloodType });
+      profile = await Profile.create({ userId, ...updateData });
     } else {
-      await profile.update({ allergies, chronicDiseases, height, weight, bloodType });
+      await profile.update(updateData);
     }
     
     res.json(profile);
